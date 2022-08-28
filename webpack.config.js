@@ -1,35 +1,61 @@
-let path = require('path');
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
-let conf = {
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+const target = process.env.NODE_ENV === 'production' ? 'web' : 'browserslist'
+
+module.exports = {
+	mode,
 	entry: './src/index.js',
+
 	output: {
-		path: path.resolve(__dirname, './dist'),
-		filename: 'index.js',
-		publicPath: 'dist/'
+		filename: 'bundle.js',
+		path: path.resolve(__dirname, './build'),
+		assetModuleFilename: 'images/[hash][ext][query]'
 	},
-	devServer: {
-		overlay: true
-	},
+
 	module: {
 		rules: [
 			{
-				test: /\.js$/,
-				loader: 'babel-loader',
-				exclude: '/node_modules/'
+				test: /\.jsx?$/,
+				exclude: '/node_modules/',
+				use: {
+					loader: 'babel-loader',
+				}
+			},
+			{
+				test: /\.s?css$/i,
+				use: [
+					mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
+					'css-loader',
+					'postcss-loader',
+					'sass-loader'
+				]
+			},
+			{
+				test: /\.(png|jpe?g|gif|svg)$/i,
+				type: 'asset/resource',
 			}
-
 		]
 	},
-	// plugins: [
-	// 	new MiniCssExtractPlugin({
-	// 		filename: 'index.css'
-	// 	})
-	// ]
-}
 
-module.exports = (env, options) => {
-	let isProd = options.mode === 'production';
-	conf.devtool = isProd ? false : 'eval-sourcemap'
+	resolve: {
+		extensions: ['.js', '.jsx'],
+	},
 
-	return conf;
+	devtool: mode === 'production' ? false : 'source-map',
+
+	devServer: {
+		static: './dist'
+	},
+
+	plugins: [
+		new CleanWebpackPlugin,
+		new HtmlWebpackPlugin({
+			template: './src/index.html'
+		}),
+		new MiniCssExtractPlugin
+	]
 }
